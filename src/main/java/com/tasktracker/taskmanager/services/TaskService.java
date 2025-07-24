@@ -4,6 +4,7 @@ import com.tasktracker.taskmanager.model.Task;
 import com.tasktracker.taskmanager.repositories.TaskRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,9 +12,11 @@ import java.util.Optional;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final SequenceGeneratorService sequenceGenerator;
 
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository, SequenceGeneratorService sequenceGenerator) {
         this.taskRepository = taskRepository;
+        this.sequenceGenerator = sequenceGenerator;
     }
 
 
@@ -41,6 +44,7 @@ public class TaskService {
             existingTask.setTitle(updatedTask.getTitle());
             existingTask.setDescription(updatedTask.getDescription());
             existingTask.setStatus(updatedTask.getStatus());
+            existingTask.setDeadline(updatedTask.getDeadline());
             return taskRepository.save(existingTask);
         }
         return null; // or throw a custom exception
@@ -48,6 +52,11 @@ public class TaskService {
 
 
     public Task  save(Task task) {
+        if (task.getId() == null) {
+            long sequence = sequenceGenerator.generateSequence(Task.SEQUENCE_NAME);
+            task.setId("trk" + String.format("%06d", sequence));
+            task.setAssignedDate(LocalDateTime.now());
+        }
         return taskRepository.save(task);
     }
 }
